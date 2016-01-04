@@ -1,0 +1,114 @@
+Dynamic Filter Pulse Width Modulation
+
+codec was made back in 2012
+
+designed as a voice codec
+
+challenge: write a good, 1-bit-per-sample codec
+
+***
+*** slide 1
+***
+
+this is our example waveform
+
+objective: encode it in some 1-bit form
+
+***
+*** slide 2
+***
+
+this is 1-bit Pulse Code Modulation (or PCM for short)
+
+it's the most obvious solution
+
+it's also really bad quality
+
+fortunately, there's a fairly easy way to get better quality, and that is to have something you can muffle
+
+***
+*** slide 3
+***
+
+this is pretty much Pulse Width Modulation (or PWM for short)
+
+it works great at 1MHz
+
+but if you're using a frequency that high, you might as well just use CD quality PCM instead
+
+---
+
+how can we improve this?
+
+we can change the strength of the low pass filter
+
+* when we find ourselves constantly going up and down, we tighten the filter so we can pretty much land where we want
+* when we find ourselves going in a single direction, we loosen the filter so we can move to where we want quickly
+
+if you look at the lower left you'll notice the waveform doesn't quite up, so keep watching that...
+
+***
+*** slide 4
+***
+
+this is DFPWM in its rawest form, and how the predictor sees it
+
+the first thing you'll notice is the improvement at that point
+
+just kidding, the first thing you notice is that there's a lot more noise as it leaves
+
+but at least we have an improvement in one place
+
+this makes an irritating carrier whine so we have to dampen it
+
+we do a check
+
+* If the last direction was the same as the current direction, give the output unmodified
+* Otherwise, output the average of the last raw output and the current raw output
+
+it's far from perfect and can definitely be improved on but it does help, as you will see here:
+
+***
+*** slide 5
+***
+
+the carrier whine is reduced and you get something closer to the waveform.
+
+there's still enough of a whine to be annoying though, so what do we do to dull annoying high pitched things?
+
+we send them to school!
+
+well OK, what we really do is put in a low-pass filter, like so
+
+***
+*** slide 6
+***
+
+and there we have it, pretty good 1-bit audio.
+
+notice the peak on the top-left - that's just the codec warming up to the right filter strength
+
+while we could seed it with the right filter strength beforehand, you really aren't going to notice the warmup.
+
+looking at any of the other peaks or troughs will give a fairer comparison.
+
+***
+***
+***
+
+just quickly go back to slide 3
+
+it's noisy in the middle and the peaks and troughs aren't very smooth
+
+and then back to slide 6
+
+and it's pretty good.
+
+***
+***
+***
+
+while i hope this talk informed you, i have to be realistic and admit i probably confused the hell out of you
+
+but as long as you enjoyed the pretty pictures, i'm happy.
+
