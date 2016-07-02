@@ -1,10 +1,22 @@
 /*
 DFPWM (Dynamic Filter Pulse Width Modulation) codec - C Implementation
-by Ben "GreaseMonkey" Russell, 2012
+by Ben "GreaseMonkey" Russell, 2012, 2016
 Public Domain
 
 Compression Component
 */
+
+// recommendation: -DCONST_RI=1 -DCONST_RD=1 -DCONST_PREC=10
+
+#ifndef CONST_RI
+#define CONST_RI 7
+#endif
+#ifndef CONST_RD
+#define CONST_RD 20
+#endif
+#ifndef CONST_PREC
+#define CONST_PREC 8
+#endif
 
 #include <string.h>
 #include <stdlib.h>
@@ -33,17 +45,17 @@ void au_compress(int *q, int *s, int *lt, int ri, int rd, int len, uint8_t *outb
 				d |= 0x80;
 			
 			// adjust charge
-			int nq = *q + ((*s * (t-*q) + 0x80)>>8);
+			int nq = *q + ((*s * (t-*q) + (1<<(CONST_PREC-1)))>>CONST_PREC);
 			if(nq == *q && nq != t)
 				nq += (t == 127 ? 1 : -1);
 			*q = nq;
 			
 			// adjust strength
-			int st = (t != *lt ? 0 : 255);
+			int st = (t != *lt ? 0 : (1<<CONST_PREC)-1);
 			int sr = (t != *lt ? rd : ri);
-			int ns = *s + ((sr*(st-*s) + 0x80)>>8);
+			int ns = *s + ((sr*(st-*s) + (1<<(CONST_PREC-1)))>>CONST_PREC);
 			if(ns == *s && ns != st)
-				ns += (st == 255 ? 1 : -1);
+				ns += (st != 0 ? 1 : -1);
 			*s = ns;
 			
 			*lt = t;
@@ -59,14 +71,17 @@ void au_compress(int *q, int *s, int *lt, int ri, int rd, int len, uint8_t *outb
 
 int main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
+
 	int8_t rawbuf[1024];
 	uint8_t cmpbuf[128];
 	
 	int q = 0;
 	int s = 0;
 	int lt = -128;
-	int ri = 7;
-	int rd = 20;
+	int ri = CONST_RI;
+	int rd = CONST_RD;
 	
 	FILE *infp = fopen("/dev/stdin","rb");
 	FILE *outfp = fopen("/dev/stdout","wb");

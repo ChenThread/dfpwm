@@ -1,10 +1,12 @@
 /*
 DFPWM (Dynamic Filter Pulse Width Modulation) codec - C Implementation
-by Ben "GreaseMonkey" Russell, 2012
+by Ben "GreaseMonkey" Russell, 2012, 2016
 Public Domain
 
 Decompression Component
 */
+
+// recommendation: -DCONST_RI=1 -DCONST_RD=1 -DCONST_PREC=10 -DCONST_FILT=140
 
 #include <string.h>
 #include <stdlib.h>
@@ -13,6 +15,19 @@ Decompression Component
 #include <errno.h>
 
 #include <immintrin.h>
+
+#ifndef CONST_RI
+#define CONST_RI 7
+#endif
+#ifndef CONST_RD
+#define CONST_RD 20
+#endif
+#ifndef CONST_PREC
+#define CONST_PREC 8
+#endif
+#ifndef CONST_POSTFILT
+#define CONST_POSTFILT 100
+#endif
 
 // note, len denotes how many compressed bytes there are (uncompressed bytes / 8).
 
@@ -202,18 +217,18 @@ void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int ri, int rd, int
 			d >>= 1;
 			
 			// adjust charge
-			int nq = *q + ((*s * (t-*q) + 0x80)>>8);
+			int nq = *q + ((*s * (t-*q) + (1<<(CONST_PREC-1)))>>CONST_PREC);
 			if(nq == *q && nq != t)
 				*q += (t == 127 ? 1 : -1);
 			int lq = *q;
 			*q = nq;
 			
 			// adjust strength
-			int st = (t != *lt ? 0 : 255);
+			int st = (t != *lt ? 0 : (1<<CONST_PREC)-1);
 			int sr = (t != *lt ? rd : ri);
-			int ns = *s + ((sr*(st-*s) + 0x80)>>8);
+			int ns = *s + ((sr*(st-*s) + (1<<(CONST_PREC-1)))>>CONST_PREC);
 			if(ns == *s && ns != st)
-				ns += (st == 255 ? 1 : -1);
+				ns += (st != 0 ? 1 : -1);
 			*s = ns;
 			
 			// FILTER: perform antijerk
@@ -234,17 +249,20 @@ void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int ri, int rd, int
 
 int main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
+
 	int8_t rawbuf[1024];
 	uint8_t cmpbuf[128];
 	
 	int q = 0;
 	int s = 0;
 	int lt = -128;
-	int ri = 7;
-	int rd = 20;
+	int ri = CONST_RI;
+	int rd = CONST_RD;
 	
 	int fq = 0;
-	int fs = 100;
+	int fs = CONST_POSTFILT;
 	
 	FILE *infp = fopen("/dev/stdin","rb");
 	FILE *outfp = fopen("/dev/stdout","wb");
