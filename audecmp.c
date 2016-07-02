@@ -6,7 +6,7 @@ Public Domain
 Decompression Component
 */
 
-// recommendation: -DCONST_RI=1 -DCONST_RD=1 -DCONST_PREC=10 -DCONST_FILT=140
+// recommendation: -DCONST_RI=1 -DCONST_RD=1 -DCONST_PREC=10 -DCONST_POSTFILT=140
 
 #include <string.h>
 #include <stdlib.h>
