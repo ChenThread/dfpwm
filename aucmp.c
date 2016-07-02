@@ -67,8 +67,7 @@ void au_compress(int *q, int *s, int *lt, int len, uint8_t *outbuf, int8_t *inbu
 #endif
 				ns += (st != 0 ? 1 : -1);
 #if CONST_PREC > 8
-			if(ns < (2<<(CONST_PREC-8)))
-				ns = (2<<(CONST_PREC-8));
+			if(ns < 1+(1<<(CONST_PREC-8))) ns = 1+(1<<(CONST_PREC-8));
 #endif
 			*s = ns;
 

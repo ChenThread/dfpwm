@@ -240,8 +240,7 @@ void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int len, int8_t *ou
 #endif
 				ns += (st != 0 ? 1 : -1);
 #if CONST_PREC > 8
-			if(ns < (2<<(CONST_PREC-8)))
-				ns = (2<<(CONST_PREC-8));
+			if(ns < 1+(1<<(CONST_PREC-8))) ns = 1+(1<<(CONST_PREC-8));
 #endif
 			*s = ns;
 
