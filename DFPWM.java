@@ -17,6 +17,13 @@ public class DFPWM
 	private final int RESP_PREC = 8;
 	private final int LPF_STRENGTH = 100;
 
+	/*
+	private final int RESP_INC = 1;
+	private final int RESP_DEC = 1;
+	private final int RESP_PREC = 10;
+	private final int LPF_STRENGTH = 140;
+	*/
+
 	private int response = 0;
 	private int level = 0;
 	private boolean lastbit = false;
@@ -48,6 +55,12 @@ public class DFPWM
 			+ (1<<(RESP_PREC-1)))>>RESP_PREC);
 		if(nresponse == response && response != rtarget)
 			nresponse += (curbit == lastbit ? 1 : -1);
+
+		if(RESP_PREC > 8)
+		{
+			if(nresponse < (2<<(RESP_PREC-8)))
+				nresponse = (2<<(RESP_PREC-8));
+		}
 
 		response = nresponse;
 		lastbit = curbit;

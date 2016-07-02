@@ -136,20 +136,20 @@ void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int ri, int rd, int
 {
 	int i,j;
 	uint8_t d;
-	
+
 	int8_t tbuf[8];
 	uint8_t dtbuf[8];
-	
+
 	int rx = ri^rd;
-	
+
 	for(i = 0; i < len; i++)
 	{
 		// load bits
 		int d = *(inbuf++);
-		
+
 		// use last target to determine turn (for antijerk + strength)
 		int d2 = ((d<<1)|(*lt))&255;
-		
+
 		// build halves
 		uint32_t vl = lut_4b1to8[d&15];
 		uint32_t vh = lut_4b1to8[d>>4];
@@ -157,14 +157,14 @@ void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int ri, int rd, int
 		*(uint32_t *)(&tbuf[4])  = vh^0x80808080;
 		*(uint32_t *)(&dtbuf[0]) = ~(vl^lut_4b1to8[d2&15]);
 		*(uint32_t *)(&dtbuf[4]) = ~(vh^lut_4b1to8[d2>>4]);
-		
+
 		// loop through
 		for(j = 0; j < 8; j++)
 		{
 			int t = tbuf[j];
 			int st = dtbuf[j];
 			int sr = ri^(rx & st);
-			
+
 			// adjust charge
 			int nq = *q + ((*s * (t-*q) + 0x80)>>8);
 			if(nq == *q && nq != t)
@@ -172,75 +172,89 @@ void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int ri, int rd, int
 				//*q += (int)(int8_t)(~(((int8_t)t)<<1));
 			int lq = *q;
 			*q = nq;
-			
+
 			// adjust strength
 			int ns = *s + ((sr*(st-*s) + 0x80)>>8);
 			if(ns == *s && ns != st)
 				ns += (st == 255 ? 1 : -1);
 				//ns += (int)(int8_t)((~((int8_t)st))|(int8_t)1);
 			*s = ns;
-			
+
 			// FILTER: perform antijerk
 			int ov = (t != *lt ? (nq+lq)>>1 : nq);
 			//int ov = (st ? (nq+lq)>>1 : nq);
-			
+
 			// FILTER: perform LPF
 			// NOTE: fs ignored and treated as 128
 			*fq += ((ov-*fq+2)>>2);
 			ov = *fq;
-			
+
 			// output sample
 			*(outbuf++) = ov;
-			
+
 			*lt = t;
 		}
-		
+
 		// TODO!
 	}
-	
+
 	_mm_empty();
 }
 #else
-void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int ri, int rd, int len, int8_t *outbuf, uint8_t *inbuf)
+void au_decompress(int *fq, int *q, int *s, int *lt, int fs, int len, int8_t *outbuf, uint8_t *inbuf)
 {
+#if !(CONST_RI <= 1 && CONST_RD <= 1)
+	const int ri = CONST_RI;
+	const int rd = CONST_RD;
+#endif
+
 	int i,j;
 	uint8_t d;
 	for(i = 0; i < len; i++)
 	{
 		// get bits
 		d = *(inbuf++);
-		
+
 		for(j = 0; j < 8; j++)
 		{
 			// set target
 			int t = ((d&1) ? 127 : -128);
 			d >>= 1;
-			
+
 			// adjust charge
 			int nq = *q + ((*s * (t-*q) + (1<<(CONST_PREC-1)))>>CONST_PREC);
 			if(nq == *q && nq != t)
 				*q += (t == 127 ? 1 : -1);
 			int lq = *q;
 			*q = nq;
-			
+
 			// adjust strength
 			int st = (t != *lt ? 0 : (1<<CONST_PREC)-1);
+#if CONST_RI <= 1 && CONST_RD <= 1
+			int ns = *s;
+			if(ns != st)
+#else
 			int sr = (t != *lt ? rd : ri);
 			int ns = *s + ((sr*(st-*s) + (1<<(CONST_PREC-1)))>>CONST_PREC);
 			if(ns == *s && ns != st)
+#endif
 				ns += (st != 0 ? 1 : -1);
+#if CONST_PREC > 8
+			if(ns < (2<<(CONST_PREC-8)))
+				ns = (2<<(CONST_PREC-8));
+#endif
 			*s = ns;
-			
+
 			// FILTER: perform antijerk
 			int ov = (t != *lt ? (nq+lq)>>1 : nq);
-			
+
 			// FILTER: perform LPF
 			*fq += ((fs*(ov-*fq) + 0x80)>>8);
 			ov = *fq;
-			
+
 			// output sample
 			*(outbuf++) = ov;
-			
+
 			*lt = t;
 		}
 	}
@@ -254,33 +268,31 @@ int main(int argc, char *argv[])
 
 	int8_t rawbuf[1024];
 	uint8_t cmpbuf[128];
-	
+
 	int q = 0;
 	int s = 0;
 	int lt = -128;
-	int ri = CONST_RI;
-	int rd = CONST_RD;
-	
+
 	int fq = 0;
 	int fs = CONST_POSTFILT;
-	
+
 	FILE *infp = fopen("/dev/stdin","rb");
 	FILE *outfp = fopen("/dev/stdout","wb");
-	
+
 	while(!feof(infp))
 	{
 		int i;
 		for(i = 0; i < 128; i++)
 			cmpbuf[i] = fgetc(infp);
 		//fprintf(stderr, "%i\n", fgetc(infp));
-		au_decompress(&fq, &q, &s, &lt, fs, ri, rd, 128, rawbuf, cmpbuf);
-		
+		au_decompress(&fq, &q, &s, &lt, fs, 128, rawbuf, cmpbuf);
+
 		fwrite(rawbuf, 128*8, 1, outfp);
 	}
-	
+
 	fclose(outfp);
 	fclose(infp);
-	
+
 	return 0;
 }
 
