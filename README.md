@@ -2,7 +2,7 @@ bunch of DFPWM implementations
 
 yes
 
-RECOMMENDATION: Unless you care about backwards compatibility, use ri=1, rd=1, LPF strength=140, precision=10 - the original coefficients suck.
+RECOMMENDATION: for new projects, use the stuff in the 1a/ directory, which will probably change and break, but the quality is better
 
 * aucmp.py: (signed 8-bit) The original. Has a description in a comment!
 * aucmp.c, audecmp.c: (signed 8-bit) The first implementation done in a language that was actually meant to be fast.
