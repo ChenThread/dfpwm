@@ -1,6 +1,6 @@
 import math
 
-STEREO = 1
+STEREO = 0
 
 #PREC_TABLE_LEN = 4096
 PREC_TABLE_LEN = 2048
@@ -17,7 +17,7 @@ prec_table = [
 	int(math.floor((curve(float(amt)/(PREC_TABLE_LEN-1)))*32767+1+0.5))
 	for amt in xrange(PREC_TABLE_LEN)]
 
-exc_table_low = [-3] + [-2]*5 + [-1]*3
+exc_table_low = [-3] + [-2]*10 + [-1]*5 + [0]
 #exc_table_low = [-1]
 exc_table_high = [1]*3 + [2]*5 + [3]
 exc_table = exc_table_low + exc_table_high
