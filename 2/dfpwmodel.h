@@ -2,9 +2,9 @@
 
 // note, len denotes how many compressed bytes there are (uncompressed bytes / 16).
 #ifndef DFPWM_DECOMPRESS
-void au_compress(int *q, int *s, int *lt, int len, uint8_t *outbuf, int16_t *inbuf)
+void au_compress(int *q, int *s, int *lt, int *exc, int len, uint8_t *outbuf, int16_t *inbuf)
 #else /* DFPWM_DECOMPRESS */
-void au_decompress(int *fq, int *q, int *s, int *lt, int *lq, int len, int16_t *outbuf, uint8_t *inbuf)
+void au_decompress(int *fq, int *q, int *s, int *lt, int *exc, int *lq, int len, int16_t *outbuf, uint8_t *inbuf)
 #endif /* DFPWM_DECOMPRESS */
 {
 	int i,j;
@@ -63,17 +63,36 @@ void au_decompress(int *fq, int *q, int *s, int *lt, int *lq, int len, int16_t *
 			q[ci] = nq;
 
 			//
+			// Adjust excitement value
+			//
+			if(t == lt[ci]) {
+				exc[ci] = (exc[ci] < EXC_TABLE_MID
+					? EXC_TABLE_MID
+					: (exc[ci] < EXC_TABLE_LEN-1
+						? exc[ci]+1
+						: EXC_TABLE_LEN-1
+					)
+				);
+
+			} else {
+				exc[ci] = (exc[ci] > EXC_TABLE_MID-1
+					? EXC_TABLE_MID-1
+					: (exc[ci] > 0
+						? exc[ci]-1
+						: 0
+					)
+				);
+			}
+
+			//
 			// Adjust strength
 			//
 			int ns = s[ci];
-			ns += (t == lt[ci]
-				? (ns >= PREC_TABLE_MID_UP ? 1 : 
-					ns >= PREC_TABLE_MID_UP_2 ? 2 : 3)
-				: (ns >= PREC_TABLE_MID_DOWN ? -2 : -1)
-			);
+			ns += exc_table[exc[ci]];
 			if(ns < PREC_TABLE_BOTTOM) { ns = PREC_TABLE_BOTTOM; }
 			if(ns > PREC_TABLE_LEN-1) { ns = PREC_TABLE_LEN-1; }
 			s[ci] = ns;
+
 
 #ifndef DFPWM_DECOMPRESS
 			lt[ci] = t;

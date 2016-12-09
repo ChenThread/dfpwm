@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 	int q[2] = {0, 0};
 	int s[2] = {0, 0};
 	int lt[2] = {-32768, -32768};
+	int exc[2] = {EXC_TABLE_MID, EXC_TABLE_MID};
 
 	int fq[2] = {0, 0};
 	int lq[2] = {0, 0};
@@ -50,7 +51,7 @@ int main(int argc, char *argv[])
 		for(i = 0; i < 128; i++)
 			cmpbuf[i] = fgetc(infp);
 		//fprintf(stderr, "%i\n", fgetc(infp));
-		au_decompress(&fq[0], &q[0], &s[0], &lt[0], &lq[0], 128, rawbuf, cmpbuf);
+		au_decompress(&fq[0], &q[0], &s[0], &lt[0], &exc[0], &lq[0], 128, rawbuf, cmpbuf);
 
 		fwrite(rawbuf, 128*16*(STEREO ? 1 : 2), 1, outfp);
 	}

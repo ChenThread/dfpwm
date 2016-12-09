@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
 	int q[2] = {0, 0};
 	int s[2] = {0, 0};
 	int lt[2] = {-32768, -32768};
+	int exc[2] = {EXC_TABLE_MID, EXC_TABLE_MID};
 
 	FILE *infp = fopen("/dev/stdin","rb");
 	FILE *outfp = fopen("/dev/stdout","wb");
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
 			rawbuf[i] = b0|(b1<<8);
 		}
 
-		au_compress(&q[0], &s[0], &lt[0], 128, cmpbuf, rawbuf);
+		au_compress(&q[0], &s[0], &lt[0], &exc[0], 128, cmpbuf, rawbuf);
 
 		fwrite(cmpbuf, 128, 1, outfp);
 	}
