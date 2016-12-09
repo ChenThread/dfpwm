@@ -1,6 +1,6 @@
 import math
 
-STEREO = 0
+STEREO = 1
 
 #PREC_TABLE_LEN = 4096
 PREC_TABLE_LEN = 2048
