@@ -3,6 +3,7 @@ bunch of DFPWM implementations
 yes
 
 RECOMMENDATION: for new projects, use the stuff in the 1a/ directory, which will probably change and break, but the quality is better
+DON'T USE THE STUFF IN THE 2/ DIRECTORY FOR ANYTHING SERIOUS AT THE MOMENT.
 
 * aucmp.py: (signed 8-bit) The original. Has a description in a comment!
 * aucmp.c, audecmp.c: (signed 8-bit) The first implementation done in a language that was actually meant to be fast.
